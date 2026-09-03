@@ -901,6 +901,50 @@
         </div>
     </div>
 
+    <!-- MODAL CADASTRO VIA CALCULADORA -->
+    <div id="modalCadastroCalc" class="modal modal-pequeno">
+        <div class="modal-content">
+            <h2>📝 Cadastrar Produto</h2>
+            <div class="form-group" style="margin-top: 20px;">
+                <label>Nome do Produto</label>
+                <input type="text" id="modCalcNome" placeholder="Ex: Chaveiro Gato">
+            </div>
+            <div class="form-group">
+                <label>Categoria</label>
+                <select id="modCalcCategoria">
+                    <option value="">Selecione...</option>
+                    <option value="Chaveiro">Chaveiro</option>
+                    <option value="Articulado">Articulado</option>
+                    <option value="Jogo">Jogo</option>
+                    <option value="Miniatura">Miniatura</option>
+                    <option value="Click">Click</option>
+                    <option value="Decoração">Decoração</option>
+                    <option value="Utensílio">Utensílio</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Descrição</label>
+                <textarea id="modCalcDescricao" placeholder="Detalhes" rows="2"></textarea>
+            </div>
+            <div class="resultado" style="margin: 15px 0;">
+                <div class="resultado-item">
+                    <strong>Preço Calculado:</strong>
+                    <span id="modCalcPreco">R$ 0.00</span>
+                </div>
+                <div class="resultado-item">
+                    <strong>Quantidade:</strong>
+                    <span id="modCalcQnt">0</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Estoque Inicial</label>
+                <input type="number" id="modCalcEstoque" placeholder="Ex: 10" step="1" min="1">
+            </div>
+            <button onclick="salvarProdutoDoCalc()">✅ Salvar Produto</button>
+            <button class="secondary" onclick="fecharModalCalc()">❌ Cancelar</button>
+        </div>
+    </div>
+
     <!-- Scripts Firebase (Compat Mode) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
@@ -1878,6 +1922,67 @@
         function atualizarVendasConsignado() {}
         function atualizarComissoes() {
             document.getElementById('containerComissoes').innerHTML = '<div class="empty-state"><h3>💰 Nenhuma comissão registrada</h3></div>';
+        }
+
+        // ===== CADASTRO VIA CALCULADORA =====
+        function abrirCadastroFromCalc() {
+            if (!window.calcValoresAtual) {
+                alert('⚠️ Calcule primeiro!');
+                return;
+            }
+
+            const preco = window.calcValoresAtual.preço;
+            const qnt = window.calcValoresAtual.quantidade;
+
+            document.getElementById('modCalcPreco').innerText = 'R$ ' + preco.toFixed(2);
+            document.getElementById('modCalcQnt').innerText = qnt;
+            document.getElementById('modCalcEstoque').value = qnt;
+            document.getElementById('modCalcNome').value = '';
+            document.getElementById('modCalcCategoria').value = '';
+            document.getElementById('modCalcDescricao').value = '';
+
+            document.getElementById('modalCadastroCalc').style.display = 'flex';
+        }
+
+        function fecharModalCalc() {
+            document.getElementById('modalCadastroCalc').style.display = 'none';
+        }
+
+        function salvarProdutoDoCalc() {
+            const nome = document.getElementById('modCalcNome').value.trim();
+            const categoria = document.getElementById('modCalcCategoria').value;
+            const estoque = parseInt(document.getElementById('modCalcEstoque').value) || 0;
+            const descricao = document.getElementById('modCalcDescricao').value.trim();
+
+            if (!nome || !categoria || estoque === 0) {
+                alert('⚠️ Preencha nome, categoria e estoque!');
+                return;
+            }
+
+            const preco = window.calcValoresAtual.preço;
+
+            dados.produtos.push({
+                id: Date.now(),
+                nome,
+                categoria,
+                preco,
+                estoque,
+                descricao,
+                dataCriacao: new Date().toLocaleDateString('pt-BR'),
+                historicoPrecos: [{
+                    data: new Date().toLocaleDateString('pt-BR'),
+                    preco: preco,
+                    quantidade: estoque,
+                    motivo: 'Primeira produção (Calculadora)'
+                }]
+            });
+
+            salvarDados();
+            atualizarProdutos();
+            atualizarDashboard();
+            fecharModalCalc();
+
+            alert('✅ Produto cadastrado com sucesso!');
         }
 
         // ===== NAVEGAÇÃO =====
