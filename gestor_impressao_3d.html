@@ -1,0 +1,2695 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Impressão 3D</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e0e0e0;
+            background: #f5f5f5;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab:hover {
+            background: #efefef;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .content {
+            padding: 30px;
+            min-height: 400px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.05em;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button.secondary {
+            background: #e0e0e0;
+            color: #333;
+            margin-top: 10px;
+        }
+
+        button.secondary:hover {
+            background: #d0d0d0;
+        }
+
+        button.danger {
+            background: #ff6b6b;
+        }
+
+        button.danger:hover {
+            background: #ff5252;
+        }
+
+        .resultado {
+            background: #f0f7ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .resultado h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .resultado-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .resultado-item:last-child {
+            border-bottom: none;
+        }
+
+        .resultado-item strong {
+            color: #333;
+        }
+
+        .resultado-valor {
+            color: #764ba2;
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .acoes {
+            display: flex;
+            gap: 10px;
+        }
+
+        button.small {
+            padding: 8px 12px;
+            font-size: 0.9em;
+            width: auto;
+            flex: 1;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state h3 {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .info-box {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            table {
+                font-size: 0.9em;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- MODAL LOGIN -->
+    <div id="loginModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 9999;">
+        <div style="background: white; padding: 40px; border-radius: 15px; max-width: 400px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+            <h2 style="text-align: center; color: #667eea; margin-bottom: 30px;">🖨️ Gestor 3D</h2>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Usuário:</label>
+                <input type="text" id="loginUser" placeholder="seu nome" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 1em;">
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Senha:</label>
+                <input type="password" id="loginPass" placeholder="sua senha" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 1em;">
+            </div>
+            <button onclick="fazerLogin()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-bottom: 10px;">Entrar</button>
+            <button onclick="criarNovoUsuario()" style="width: 100%; padding: 12px; background: #2e7d32; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Criar Novo</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <h1>🖨️ Gestor de Impressão 3D</h1>
+                <p>Controle completo de custos, estoque, perdas e clientes</p>
+                <p style="font-size: 0.85em; margin-top: 15px; opacity: 0.85;">Desenvolvido por <strong>ON Desenvolvedor</strong></p>
+                <p style="font-size: 0.75em; margin-top: 8px; opacity: 0.7;">v1.06 - Com Login</p>
+            </div>
+            <button onclick="fazerLogout()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; height: fit-content;">🚪 Sair</button>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="mudarAba('dashboard')">
+                📈 Dashboard
+            </div>
+            <div class="tab" onclick="mudarAba('calculadora')">
+                📊 Calculadora
+            </div>
+            <div class="tab" onclick="mudarAba('estoque')">
+                📦 Estoque
+            </div>
+            <div class="tab" onclick="mudarAba('perdas')">
+                ⚠️ Perdas
+            </div>
+            <div class="tab" onclick="mudarAba('produtos')">
+                🛍️ Produtos
+            </div>
+            <div class="tab" onclick="mudarAba('clientes')">
+                👥 Clientes
+            </div>
+            <div class="tab" onclick="mudarAba('consignados')">
+                🏪 Consignados
+            </div>
+            <div class="tab" onclick="mudarAba('relatorio')">
+                💰 Relatório
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- ABA DASHBOARD -->
+            <div id="dashboard" class="tab-content active">
+                <h2>📈 Dashboard Executivo</h2>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">FATURAMENTO TOTAL</div>
+                        <div style="font-size: 2.5em; font-weight: 700;" id="dashFaturamento">R$ 0.00</div>
+                        <div style="font-size: 0.85em; margin-top: 10px; opacity: 0.8;" id="dashFaturQnt">0 venda(s)</div>
+                    </div>
+
+                    <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 25px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">CUSTOS TOTAIS</div>
+                        <div style="font-size: 2.5em; font-weight: 700;" id="dashCustos">R$ 0.00</div>
+                        <div style="font-size: 0.85em; margin-top: 10px; opacity: 0.8;">Material + Perdas</div>
+                    </div>
+
+                    <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 25px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">LUCRO LÍQUIDO</div>
+                        <div style="font-size: 2.5em; font-weight: 700;" id="dashLucro">R$ 0.00</div>
+                        <div style="font-size: 0.85em; margin-top: 10px; opacity: 0.8;" id="dashMargemPct">0%</div>
+                    </div>
+                </div>
+
+                <div class="resultado" style="margin-bottom: 20px;">
+                    <h3>📊 Resumo Operacional</h3>
+                    <div class="resultado-item">
+                        <strong>Total de Clientes:</strong>
+                        <span class="resultado-valor" id="dashClientes">0</span>
+                    </div>
+                    <div class="resultado-item">
+                        <strong>Total de Vendas Realizadas:</strong>
+                        <span class="resultado-valor" id="dashVendas">0</span>
+                    </div>
+                    <div class="resultado-item">
+                        <strong>Ticket Médio:</strong>
+                        <span class="resultado-valor" id="dashTicket">R$ 0.00</span>
+                    </div>
+                    <div class="resultado-item">
+                        <strong>Perda Total (Quantidade):</strong>
+                        <span class="resultado-valor" id="dashPerdaQnt">0 g</span>
+                    </div>
+                    <div class="resultado-item">
+                        <strong>Perda Total (Valor):</strong>
+                        <span class="resultado-valor" id="dashPerdaVal">R$ 0.00</span>
+                    </div>
+                    <div class="resultado-item">
+                        <strong>Valor Total em Estoque:</strong>
+                        <span class="resultado-valor" id="dashEstoque">R$ 0.00</span>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <strong>💡 O que significa:</strong> Este dashboard mostra a saúde financeira da operação. Se o lucro líquido é bom, vocês estão no caminho certo!
+                </div>
+            </div>
+
+            <!-- ABA CALCULADORA -->
+            <div id="calculadora" class="tab-content active">
+                <h2>💰 Calculadora de Custos</h2>
+
+                <div class="info-box">
+                    <strong>💡 Dica:</strong> Preencha todos os valores para calcular o preço final com margem de lucro!
+                </div>
+
+                <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h3 style="color: #1976d2; margin-bottom: 15px;">📦 OPÇÃO 1: Usar Produto Cadastrado</h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Selecione o Produto</label>
+                            <select id="calcProdutoSelecionado" onchange="preencherDadosProdutoCalc()">
+                                <option value="">Selecione um produto...</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Preço Já Calculado</label>
+                            <input type="text" id="calcPrecoProduto" placeholder="R$ 0.00" readonly style="background: #f5f5f5;">
+                        </div>
+                    </div>
+                </div>
+
+                <div style="text-align: center; color: #999; margin: 20px 0; font-weight: 600;">— OU —</div>
+
+                <div style="background: #fff3e0; padding: 20px; border-radius: 8px;">
+                    <h3 style="color: #e65100; margin-bottom: 15px;">✏️ OPÇÃO 2: Cálculo Manual</h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Material (PLA ou PETG)</label>
+                            <select id="calcMaterial">
+                                <option value="">Selecione...</option>
+                                <option value="PLA">PLA</option>
+                                <option value="PETG">PETG</option>
+                                <option value="TPU">TPU</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Peso do produto (gramas)</label>
+                            <input type="number" id="calcPeso" placeholder="Ex: 50" min="0" step="0.1">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Custo por kg do material (R$)</label>
+                            <input type="number" id="calcCustoMaterial" placeholder="Ex: 25.00" min="0" step="0.01">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tempo de impressão (horas)</label>
+                            <input type="number" id="calcTempo" placeholder="Ex: 2.5" min="0" step="0.1">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Consumo de energia (200W) - R$ por hora</label>
+                        <input type="number" id="calcEnergia" placeholder="Ex: 1.50" min="0" step="0.01">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Custo de embalagem (R$)</label>
+                        <input type="number" id="calcEmbalagem" placeholder="Ex: 0.50" min="0" step="0.01">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Outros custos (click, chaveiro, etc) (R$)</label>
+                        <input type="number" id="calcOutros" placeholder="Ex: 1.00" min="0" step="0.01">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Margem de lucro (%)</label>
+                        <input type="number" id="calcMargem" placeholder="Ex: 50" min="0" step="1" value="50">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>⭐ Quantidade de Unidades por Impressão</label>
+                        <input type="number" id="calcQuantidade" placeholder="Ex: 10 (divide custo por 10)" min="1" step="1" value="1">
+                    </div>
+                </div>
+
+                <button onclick="calcularCusto()">🧮 Calcular Preço Final</button>
+
+                <div id="resultadoCalc" class="resultado" style="display:none;">
+                    <h3>📈 Resultado do Cálculo</h3>
+                    <div class="resultado-item">
+                        <strong>Custo do Material:</strong>
+                        <span class="resultado-valor" id="custMat">R$ 0.00</span>
+                    </div>
+                    <div class="resultado-item">
+                        <strong>Custo de Energia:</strong>
+                        <span class="resultado-valor" id="custEne">R$ 0.00</span>
+                    </div>
+                    <div class="resultado-item">
+                        <strong>Custo de Embalagem:</strong>
+                        <span class="resultado-valor" id="custEmb">R$ 0.00</span>
+                    </div>
+                    <div class="resultado-item">
+                        <strong>Outros Custos:</strong>
+                        <span class="resultado-valor" id="custOut">R$ 0.00</span>
+                    </div>
+                    <div class="resultado-item" style="border-top: 2px solid #667eea; margin-top: 10px; padding-top: 10px;">
+                        <strong>Custo Total:</strong>
+                        <span class="resultado-valor" id="custTotal">R$ 0.00</span>
+                    </div>
+                    <div class="resultado-item">
+                        <strong>Margem de Lucro:</strong>
+                        <span class="resultado-valor" id="custLucro">R$ 0.00</span>
+                    </div>
+                    <div class="resultado-item" style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin-top: 10px; font-size: 1.2em;">
+                        <strong>💵 Preço de Venda (por unidade):</strong>
+                        <span class="resultado-valor" id="custVenda" style="color: #2e7d32; font-size: 1.3em;">R$ 0.00</span>
+                    </div>
+
+                    <button onclick="abrirCadastroFromCalc()" style="margin-top: 20px; background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);">
+                        ✅ Cadastrar este Produto
+                    </button>
+                </div>
+            </div>
+
+            <!-- ABA ESTOQUE -->
+            <div id="estoque" class="tab-content">
+                <h2>📦 Controle de Estoque</h2>
+
+                <div class="info-box">
+                    <strong>💡 Dica:</strong> Registre todos os materiais que vocês têm! Assim dá pra saber quando precisa comprar mais.
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Material</label>
+                        <input type="text" id="estMaterial" placeholder="Ex: PLA Vermelho" >
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tipo (PLA/PETG/TPU/Outro)</label>
+                        <input type="text" id="estTipo" placeholder="Ex: PLA">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Quantidade (kg)</label>
+                        <input type="number" id="estQuantidade" placeholder="Ex: 2.5" min="0" step="0.1">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Custo por kg (R$)</label>
+                        <input type="number" id="estCusto" placeholder="Ex: 25.00" min="0" step="0.01">
+                    </div>
+                </div>
+
+                <button onclick="adicionarEstoque()">➕ Adicionar Material</button>
+
+                <table id="tabelaEstoque" style="display:none;">
+                    <thead>
+                        <tr>
+                            <th>Material</th>
+                            <th>Tipo</th>
+                            <th>Quantidade (kg)</th>
+                            <th>Custo/kg (R$)</th>
+                            <th>Valor Total (R$)</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoEstoque"></tbody>
+                </table>
+
+                <div id="emptyEstoque" class="empty-state">
+                    <h3>📦 Nenhum material registrado</h3>
+                    <p>Adicione seus materiais acima!</p>
+                </div>
+            </div>
+
+            <!-- ABA PERDAS -->
+            <div id="perdas" class="tab-content">
+                <h2>⚠️ Registro de Perdas</h2>
+
+                <div class="info-box">
+                    <strong>💡 Dica:</strong> Registre quando uma impressão falhar para acompanhar o quanto vocês estão perdendo.
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Data</label>
+                        <input type="date" id="perdData">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Motivo da Perda</label>
+                        <input type="text" id="perdMotivo" placeholder="Ex: Falha de impressão">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Material Perdido</label>
+                        <input type="text" id="perdMaterial" placeholder="Ex: PLA Vermelho">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Quantidade Perdida (gramas)</label>
+                        <input type="number" id="perdQuantidade" placeholder="Ex: 50" min="0" step="0.1">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Valor Estimado da Perda (R$)</label>
+                    <input type="number" id="perdValor" placeholder="Ex: 1.25" min="0" step="0.01">
+                </div>
+
+                <button onclick="adicionarPerda()">📝 Registrar Perda</button>
+
+                <table id="tabelaPerdas" style="display:none;">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Motivo</th>
+                            <th>Material</th>
+                            <th>Quantidade (g)</th>
+                            <th>Valor (R$)</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoPerdas"></tbody>
+                </table>
+
+                <div id="emptyPerdas" class="empty-state">
+                    <h3>✅ Nenhuma perda registrada</h3>
+                    <p>Esperamos que continue assim!</p>
+                </div>
+
+                <div id="totalPerdas" style="display:none; margin-top: 30px;">
+                    <div class="resultado">
+                        <h3>📊 Resumo de Perdas</h3>
+                        <div class="resultado-item">
+                            <strong>Total de Perdas (quantidade):</strong>
+                            <span class="resultado-valor" id="totalPQnt">0 g</span>
+                        </div>
+                        <div class="resultado-item">
+                            <strong>Total de Perdas (valor):</strong>
+                            <span class="resultado-valor" id="totalPVal">R$ 0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA PRODUTOS -->
+            <div id="produtos" class="tab-content">
+                <h2>🛍️ Catálogo de Produtos</h2>
+
+                <div class="info-box">
+                    <strong>💡 Dica:</strong> Cadastre todos os produtos que vocês fazem! Assim quando um cliente compra, você seleciona da lista e o estoque desconta automaticamente.
+                </div>
+
+                <h3 style="margin-top: 30px; margin-bottom: 20px;">➕ Novo Produto</h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nome do Produto</label>
+                        <input type="text" id="prodNome" placeholder="Ex: Chaveiro Homem-Aranha">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Categoria</label>
+                        <select id="prodCategoria">
+                            <option value="">Selecione a Categoria...</option>
+                            <option value="Chaveiro">🔑 Chaveiro</option>
+                            <option value="Articulado">🦗 Articulado</option>
+                            <option value="Jogo">🎮 Jogo</option>
+                            <option value="Miniatura">🏠 Miniatura</option>
+                            <option value="Click">🖱️ Click</option>
+                            <option value="Decoração">✨ Decoração</option>
+                            <option value="Utensílio">🛠️ Utensílio</option>
+                            <option value="Outro">📦 Outro</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Preço de Venda (R$)</label>
+                        <input type="number" id="prodPreco" placeholder="Ex: 15.00" min="0" step="0.01">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Preço Mínimo (R$)</label>
+                        <input type="number" id="prodPrecoMinimo" placeholder="Ex: 10.00" min="0" step="0.01">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Estoque Inicial (unidades)</label>
+                        <input type="number" id="prodEstoque" placeholder="Ex: 10" min="0" step="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Descrição (opcional)</label>
+                        <input type="text" id="prodDescricao" placeholder="Ex: Impressão em PLA Vermelho">
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 25px; margin-bottom: 15px;">💰 Comissão (opcional)</h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tipo de Comissão</label>
+                        <select id="prodComissaoTipo">
+                            <option value="">Sem comissão</option>
+                            <option value="fixo">💵 Valor Fixo (R$)</option>
+                            <option value="percentual">📊 Percentual (%)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Valor da Comissão</label>
+                        <input type="number" id="prodComissaoValor" placeholder="Ex: 5.00 ou 20" min="0" step="0.01">
+                    </div>
+                </div>
+
+                <button onclick="adicionarProduto()">✅ Cadastrar Produto</button>
+
+                <table id="tabelaProdutos" style="display:none; margin-top: 30px;">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Categoria</th>
+                            <th>Preço (R$)</th>
+                            <th>Estoque</th>
+                            <th>Descrição</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoProdutos"></tbody>
+                </table>
+
+                <div id="emptyProdutos" class="empty-state">
+                    <h3>🛍️ Nenhum produto cadastrado</h3>
+                    <p>Adicione seus produtos acima!</p>
+                </div>
+            </div>
+
+            <!-- ABA CLIENTES -->
+            <div id="clientes" class="tab-content">
+                <h2>👥 Gestão de Clientes</h2>
+
+                <div class="info-box">
+                    <strong>💡 Dica:</strong> Registre cada cliente e o que ele comprou! Assim vocês podem oferecer novos produtos pra ele depois.
+                </div>
+
+                <h3 style="margin-top: 30px; margin-bottom: 20px;">➕ Adicionar Novo Cliente</h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nome do Cliente</label>
+                        <input type="text" id="cliNome" placeholder="Ex: João Silva">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Telefone / WhatsApp</label>
+                        <input type="tel" id="cliTelefone" placeholder="Ex: (11) 99999-8888">
+                    </div>
+                </div>
+
+                <button onclick="adicionarCliente()">👤 Registrar Cliente</button>
+
+                <table id="tabelaClientes" style="display:none; margin-top: 30px;">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Telefone</th>
+                            <th>Compras</th>
+                            <th>Valor Total</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoClientes"></tbody>
+                </table>
+
+                <div id="emptyClientes" class="empty-state">
+                    <h3>👥 Nenhum cliente registrado</h3>
+                    <p>Adicione seus clientes acima!</p>
+                </div>
+            </div>
+
+            <!-- ABA CONSIGNADOS -->
+            <div id="consignados" class="tab-content">
+                <h2>🏪 Gestão de Consignados</h2>
+
+                <div class="info-box">
+                    <strong>💡 Dica:</strong> Controle seus produtos deixados em consignação (pontos de venda, irmão, etc) com comissões automáticas por produto!
+                </div>
+
+                <!-- TAB INTERNO: Gerenciar Pontos -->
+                <div style="margin-bottom: 30px; border-bottom: 2px solid #e0e0e0; padding-bottom: 30px;">
+                    <h3 style="margin-bottom: 20px;">📍 Gerenciar Pontos de Venda</h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nome do Ponto</label>
+                            <input type="text" id="conNome" placeholder="Ex: Padaria do João, Irmão Escola">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <select id="conTipo">
+                                <option value="ponto_venda">🏪 Ponto de Venda</option>
+                                <option value="irmao">👨‍👦 Irmão</option>
+                                <option value="outro">📦 Outro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button onclick="adicionarConsignado()">➕ Adicionar Ponto</button>
+
+                    <table id="tabelaConsignados" style="display:none; margin-top: 30px;">
+                        <thead>
+                            <tr>
+                                <th>Ponto</th>
+                                <th>Tipo</th>
+                                <th>Produtos</th>
+                                <th>Total em Estoque</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpoConsignados"></tbody>
+                    </table>
+
+                    <div id="emptyConsignados" class="empty-state">
+                        <h3>🏪 Nenhum ponto registrado</h3>
+                        <p>Adicione seus pontos de venda acima!</p>
+                    </div>
+                </div>
+
+                <!-- TAB INTERNO: Reabastecer Consignado -->
+                <div style="margin-bottom: 30px; border-bottom: 2px solid #e0e0e0; padding-bottom: 30px;">
+                    <h3 style="margin-bottom: 20px;">📦 Reabastecer Consignado</h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Selecione o Ponto</label>
+                            <select id="conReabastecePonto" onchange="atualizarProdutosReabastece()">
+                                <option value="">Selecione...</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Produto</label>
+                            <select id="conReabasteceProduto">
+                                <option value="">Selecione...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Quantidade a Adicionar</label>
+                            <input type="number" id="conReabastaceQtd" placeholder="Ex: 10" min="1" step="1">
+                        </div>
+                    </div>
+
+                    <button onclick="reabasteceConsignado()">➕ Adicionar Estoque</button>
+
+                    <table id="tabelaReabastece" style="display:none; margin-top: 30px;">
+                        <thead>
+                            <tr>
+                                <th>Ponto</th>
+                                <th>Produto</th>
+                                <th>Estoque Atual</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpoReabastece"></tbody>
+                    </table>
+
+                    <div id="emptyReabastece" class="empty-state">
+                        <h3>📦 Nenhum estoque em consignação</h3>
+                        <p>Reabastece acima!</p>
+                    </div>
+                </div>
+
+                <!-- TAB INTERNO: Dar Baixa de Vendas -->
+                <div style="margin-bottom: 30px; border-bottom: 2px solid #e0e0e0; padding-bottom: 30px;">
+                    <h3 style="margin-bottom: 20px;">📝 Dar Baixa de Venda</h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Selecione o Ponto</label>
+                            <select id="conPontoSelecionado" onchange="atualizarProdutosConsignado()">
+                                <option value="">Selecione...</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Data da Venda</label>
+                            <input type="date" id="conDataVenda">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Produto</label>
+                            <select id="conProduto" onchange="preencherComissaoProduto()">
+                                <option value="">Selecione...</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Quantidade Vendida</label>
+                            <input type="number" id="conQtdVendida" placeholder="Ex: 3" min="1" step="1">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Comissão por Unidade (Calculado)</label>
+                            <input type="text" id="conComissaoUnit" placeholder="R$ 0.00" readonly style="background: #f5f5f5;">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Total de Comissão (Calculado)</label>
+                            <input type="text" id="conComissaoTotal" placeholder="R$ 0.00" readonly style="background: #f5f5f5;">
+                        </div>
+                    </div>
+
+                    <button onclick="registrarVendaConsignado()">✅ Registrar Venda</button>
+
+                    <table id="tabelaBaixaConsignado" style="display:none; margin-top: 30px;">
+                        <thead>
+                            <tr>
+                                <th>Ponto</th>
+                                <th>Produto</th>
+                                <th>Qtd</th>
+                                <th>Comissão</th>
+                                <th>Data</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpoBaixaConsignado"></tbody>
+                    </table>
+
+                    <div id="emptyBaixaConsignado" class="empty-state">
+                        <h3>📝 Nenhuma venda registrada</h3>
+                        <p>Registre as vendas acima!</p>
+                    </div>
+                </div>
+
+                <!-- TAB INTERNO: Controle de Comissões -->
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 20px;">💰 Controle de Comissões</h3>
+
+                    <div id="containerComissoes">
+                        <div id="emptyComissoes" class="empty-state">
+                            <h3>💰 Nenhuma comissão registrada</h3>
+                            <p>As comissões aparecerão aqui conforme você der baixa de vendas!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA RELATÓRIO -->
+            <div id="relatorio" class="tab-content">
+                <h2>💰 Relatório Financeiro Completo</h2>
+
+                <div class="form-row" style="margin-bottom: 30px;">
+                    <div class="form-group">
+                        <label>Período Inicial</label>
+                        <input type="month" id="relPeriodoInicio">
+                    </div>
+                    <div class="form-group">
+                        <label>Período Final</label>
+                        <input type="month" id="relPeriodoFim">
+                    </div>
+                </div>
+
+                <button onclick="gerarRelatorio()" style="margin-bottom: 30px;">📋 Gerar Relatório</button>
+
+                <div id="relatorioCompleto" style="display:none;">
+                    <!-- RESUMO EXECUTIVO -->
+                    <div style="background: #f0f7ff; padding: 25px; border-radius: 12px; margin-bottom: 30px; border-left: 5px solid #667eea;">
+                        <h3 style="color: #667eea; margin-bottom: 20px;">📊 RESUMO EXECUTIVO</h3>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 0.9em; color: #666; margin-bottom: 8px;">Receita Bruta</div>
+                                <div style="font-size: 2em; font-weight: 700; color: #2e7d32;" id="relReceita">R$ 0.00</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 0.9em; color: #666; margin-bottom: 8px;">Custos Totais</div>
+                                <div style="font-size: 2em; font-weight: 700; color: #d32f2f;" id="relCustosTotal">R$ 0.00</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 0.9em; color: #666; margin-bottom: 8px;">Lucro Líquido</div>
+                                <div style="font-size: 2em; font-weight: 700; color: #1976d2;" id="relLucro">R$ 0.00</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 0.9em; color: #666; margin-bottom: 8px;">Margem de Lucro</div>
+                                <div style="font-size: 2em; font-weight: 700; color: #7b1fa2;" id="relMargem">0%</div>
+                            </div>
+                        </div>
+
+                        <div style="background: white; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                            <div style="display: grid; gap: 10px; font-size: 0.95em;">
+                                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 8px 0;">
+                                    <strong>Receita de Vendas:</strong>
+                                    <span id="relReceitaVendas">R$ 0.00</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 8px 0;">
+                                    <strong>Custos de Material:</strong>
+                                    <span id="relCustoMat">R$ 0.00</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 8px 0;">
+                                    <strong>Custos com Perdas:</strong>
+                                    <span id="relCustoPerda">R$ 0.00</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: 8px 0; background: #f5f5f5; padding: 12px; border-radius: 6px; margin-top: 10px;">
+                                    <strong>Lucro (Receita - Custos):</strong>
+                                    <span style="font-weight: 700; color: #1976d2;" id="relLucroCalc">R$ 0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ANÁLISE POR CLIENTE -->
+                    <div style="background: #f5f5f5; padding: 25px; border-radius: 12px; margin-bottom: 30px; border-left: 5px solid #764ba2;">
+                        <h3 style="color: #764ba2; margin-bottom: 20px;">👥 TOP CLIENTES</h3>
+                        <table id="relTabelaClientes" style="width: 100%; background: white;">
+                            <thead>
+                                <tr style="background: #764ba2; color: white;">
+                                    <th style="padding: 12px; text-align: left;">Cliente</th>
+                                    <th style="padding: 12px; text-align: center;">Compras</th>
+                                    <th style="padding: 12px; text-align: right;">Total Gasto</th>
+                                    <th style="padding: 12px; text-align: right;">% do Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="relTbodyClientes"></tbody>
+                        </table>
+                        <div id="emptyRelClientes" style="text-align: center; padding: 30px; color: #999;">
+                            <p>Nenhum cliente registrado</p>
+                        </div>
+                    </div>
+
+                    <!-- ANÁLISE DE PERDAS -->
+                    <div style="background: #fff3cd; padding: 25px; border-radius: 12px; margin-bottom: 30px; border-left: 5px solid #ff9800;">
+                        <h3 style="color: #e65100; margin-bottom: 20px;">⚠️ ANÁLISE DE PERDAS</h3>
+                        <div style="background: white; padding: 20px; border-radius: 8px;">
+                            <div style="display: grid; gap: 12px;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <strong>Total de Falhas Registradas:</strong>
+                                    <span id="relQntPerdas">0</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <strong>Material Perdido (quantidade):</strong>
+                                    <span id="relQntMaterial">0 g</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <strong>Valor Total Perdido:</strong>
+                                    <span id="relValPerdas" style="font-weight: 700; color: #d32f2f;">R$ 0.00</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; border-top: 2px solid #ddd; padding-top: 12px; margin-top: 12px;">
+                                    <strong>% de Perdas (do total de custos):</strong>
+                                    <span id="relPctPerdas" style="font-weight: 700;">0%</span>
+                                </div>
+                            </div>
+                            <div id="relTabelaPerdas"></div>
+                        </div>
+                    </div>
+
+                    <!-- PARECER EXECUTIVO -->
+                    <div style="background: #e8f5e9; padding: 25px; border-radius: 12px; border-left: 5px solid #2e7d32;">
+                        <h3 style="color: #2e7d32; margin-bottom: 20px;">📝 PARECER EXECUTIVO & RECOMENDAÇÕES</h3>
+                        <div id="parecerTexto" style="line-height: 1.8; color: #333; background: white; padding: 20px; border-radius: 8px;">
+                            <!-- Parecer será gerado dinamicamente -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="relatorioVazio" class="empty-state">
+                    <h3>📋 Nenhum relatório gerado</h3>
+                    <p>Selecione um período e clique em "Gerar Relatório"</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Cadastro de Produto (da Calculadora) -->
+    <div id="modalCadastroCalc" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+        <div style="background:white; padding:30px; border-radius:15px; max-width:500px; width:90%; max-height:80vh; overflow-y:auto;">
+            <h2>🛍️ Cadastrar Novo Produto</h2>
+
+            <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <strong>💰 Preço Calculado:</strong> <span id="modCalcPreco" style="font-size: 1.2em; color: #2e7d32;">R$ 0.00</span><br>
+                <strong>📊 Total de Unidades:</strong> <span id="modCalcQnt">1</span>
+            </div>
+
+            <div class="form-group" style="margin-bottom:15px;">
+                <label>Nome do Produto</label>
+                <input type="text" id="modCalcNome" placeholder="Ex: Chaveiro Homem-Aranha">
+            </div>
+
+            <div class="form-group" style="margin-bottom:15px;">
+                <label>Categoria</label>
+                <select id="modCalcCategoria">
+                    <option value="">Selecione a Categoria...</option>
+                    <option value="Chaveiro">🔑 Chaveiro</option>
+                    <option value="Articulado">🦗 Articulado</option>
+                    <option value="Jogo">🎮 Jogo</option>
+                    <option value="Miniatura">🏠 Miniatura</option>
+                    <option value="Click">🖱️ Click</option>
+                    <option value="Decoração">✨ Decoração</option>
+                    <option value="Utensílio">🛠️ Utensílio</option>
+                    <option value="Outro">📦 Outro</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom:15px;">
+                <label>Estoque Inicial (unidades)</label>
+                <input type="number" id="modCalcEstoque" placeholder="Ex: 10" min="1" step="1" value="1">
+            </div>
+
+            <div class="form-group" style="margin-bottom:15px;">
+                <label>Descrição (opcional)</label>
+                <input type="text" id="modCalcDescricao" placeholder="Ex: Impressão em PLA Vermelho">
+            </div>
+
+            <button onclick="salvarProdutoDoCalc()">✅ Cadastrar Produto</button>
+            <button class="secondary" onclick="fecharModalCalc()">❌ Cancelar</button>
+        </div>
+    </div>
+
+    <!-- Modal de Edição de Produto -->
+    <div id="modalEditarProduto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+        <div style="background:white; padding:30px; border-radius:15px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto;">
+            <h2>✏️ Editar Produto</h2>
+
+            <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <strong>📦 Produto:</strong> <span id="editProdNome" style="font-size: 1.1em; color: #1976d2;"></span><br>
+                <strong>📊 Estoque Atual:</strong> <span id="editProdEstoqueAtual" style="font-size: 1.1em;">0</span> unidades<br>
+                <strong>💰 Preço Atual:</strong> <span id="editProdPrecoAtual" style="font-size: 1.1em;">R$ 0.00</span>
+            </div>
+
+            <h3 style="margin-top: 25px; margin-bottom: 15px; color: #667eea;">➕ Adicionar Nova Remessa</h3>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Quantidade a Adicionar (unidades)</label>
+                    <input type="number" id="editAddQuantidade" placeholder="Ex: 15" min="1" step="1">
+                </div>
+
+                <div class="form-group">
+                    <label>Novo Custo Unitário (R$)</label>
+                    <input type="number" id="editNewCusto" placeholder="Ex: 12.50" min="0.01" step="0.01">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Motivo/Observação (opcional)</label>
+                <input type="text" id="editMotivo" placeholder="Ex: Nova remessa de filamento">
+            </div>
+
+            <h3 style="margin-top: 25px; margin-bottom: 15px; color: #764ba2;">📜 Histórico de Custos</h3>
+            <div id="editHistorico" style="background: #f5f5f5; padding: 15px; border-radius: 8px; max-height: 200px; overflow-y: auto;">
+                <p style="text-align: center; color: #999;">Carregando histórico...</p>
+            </div>
+
+            <button onclick="salvarEdicaoProduto()" style="margin-top: 20px;">✅ Adicionar Remessa</button>
+            <button class="secondary" onclick="fecharModalEditarProduto()">❌ Cancelar</button>
+        </div>
+    </div>
+
+    <!-- Modal de Compras do Cliente -->
+    <div id="modalCompras" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+        <div style="background:white; padding:30px; border-radius:15px; max-width:500px; width:90%;">
+            <h2>📝 Compras de <span id="nomeClienteModal"></span></h2>
+
+            <div style="margin:20px 0; max-height:300px; overflow-y:auto;">
+                <div id="listaCompras"></div>
+            </div>
+
+            <div style="margin-top:20px; padding-top:20px; border-top:2px solid #ddd;">
+                <h3>➕ Adicionar Compra</h3>
+
+                <div class="form-group" style="margin-bottom:15px;">
+                    <label>🔍 Filtrar por Categoria</label>
+                    <select id="modFiltroCategoria" onchange="atualizarProdutosModal()">
+                        <option value="">Todas as Categorias</option>
+                        <option value="Chaveiro">🔑 Chaveiro</option>
+                        <option value="Articulado">🦗 Articulado</option>
+                        <option value="Jogo">🎮 Jogo</option>
+                        <option value="Miniatura">🏠 Miniatura</option>
+                        <option value="Click">🖱️ Click</option>
+                        <option value="Decoração">✨ Decoração</option>
+                        <option value="Utensílio">🛠️ Utensílio</option>
+                        <option value="Outro">📦 Outro</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom:15px;">
+                    <label>Produto</label>
+                    <select id="modProduto" onchange="preencherPreco()">
+                        <option value="">Selecione um produto...</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom:15px;">
+                    <label>Preço (R$)</label>
+                    <input type="number" id="modPreco" placeholder="Preço auto-completa" min="0" step="0.01">
+                </div>
+
+                <div class="form-group" style="margin-bottom:15px;">
+                    <label>Quantidade</label>
+                    <input type="number" id="modQuantidade" placeholder="Ex: 1" min="1" step="1" value="1">
+                </div>
+
+                <div class="form-group" style="margin-bottom:15px;">
+                    <label>Data</label>
+                    <input type="date" id="modData">
+                </div>
+
+                <button onclick="adicionarCompra()">✅ Adicionar Compra</button>
+                <button class="secondary" onclick="fecharModal()">❌ Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Inicializar data de hoje
+        document.getElementById('perdData').valueAsDate = new Date();
+        // ===== LOGIN =====
+        function fazerLogin() {
+            const user = document.getElementById('loginUser').value.trim();
+            const pass = document.getElementById('loginPass').value.trim();
+
+            if (!user || !pass) {
+                alert('⚠️ Preencha usuário e senha!');
+                return;
+            }
+
+            const usuarios = JSON.parse(localStorage.getItem('usuarios') || '{}');
+            if (usuarios[user] && usuarios[user] === pass) {
+                localStorage.setItem('usuarioLogado', user);
+                usuarioAtual = user;
+                document.getElementById('loginModal').style.display = 'none';
+                carregarDados();
+            } else {
+                alert('❌ Usuário ou senha incorretos!');
+            }
+        }
+
+        function criarNovoUsuario() {
+            // Limpar os campos ANTES de pedir
+            document.getElementById('loginUser').value = '';
+            document.getElementById('loginPass').value = '';
+
+            // Pedir novo usuário
+            const user = prompt('Nome do novo usuário:');
+            if (!user || user.trim() === '') return;
+
+            const pass = prompt('Senha (mín. 6 caracteres):');
+            if (!pass || pass.trim() === '') return;
+
+            if (pass.length < 6) {
+                alert('⚠️ Senha deve ter mínimo 6 caracteres!');
+                return;
+            }
+
+            const usuarios = JSON.parse(localStorage.getItem('usuarios') || '{}');
+            if (usuarios[user.trim()]) {
+                alert('⚠️ Usuário já existe!');
+                return;
+            }
+
+            usuarios[user.trim()] = pass;
+            localStorage.setItem('usuarios', JSON.stringify(usuarios));
+            localStorage.setItem('usuarioLogado', user.trim());
+            usuarioAtual = user.trim();
+            document.getElementById('loginModal').style.display = 'none';
+
+            // Criar dados vazios pra novo usuário
+            const dados = {
+                estoque: [],
+                perdas: [],
+                clientes: [],
+                produtos: [],
+                consignados: []
+            };
+            localStorage.setItem(user.trim() + '_estoque', JSON.stringify(dados.estoque));
+            localStorage.setItem(user.trim() + '_perdas', JSON.stringify(dados.perdas));
+            localStorage.setItem(user.trim() + '_clientes', JSON.stringify(dados.clientes));
+            localStorage.setItem(user.trim() + '_produtos', JSON.stringify(dados.produtos));
+            localStorage.setItem(user.trim() + '_consignados', JSON.stringify(dados.consignados));
+
+            carregarDados();
+            alert('✅ Conta criada! Bem-vindo, ' + user + '!');
+        }
+
+        function fazerLogout() {
+            if (confirm('Deseja sair?')) {
+                localStorage.removeItem('usuarioLogado');
+                usuarioAtual = null;
+                document.getElementById('loginModal').style.display = 'flex';
+                document.getElementById('loginUser').value = '';
+                document.getElementById('loginPass').value = '';
+            }
+        }
+
+        let usuarioAtual = localStorage.getItem('usuarioLogado');
+
+        function carregarDados() {
+            if (!usuarioAtual) {
+                document.getElementById('loginModal').style.display = 'flex';
+                return;
+            }
+            document.getElementById('loginModal').style.display = 'none';
+            atualizarProdutos();
+            atualizarEstoque();
+            atualizarPerdas();
+            atualizarClientes();
+            atualizarConsignados();
+            atualizarSelectConsignados();
+            atualizarSelectReabastece();
+            atualizarReabastece();
+            atualizarVendasConsignado();
+            atualizarComissoes();
+            atualizarDashboard();
+        }
+
+        document.getElementById('modData').valueAsDate = new Date();
+
+        // Dados armazenados no navegador - específico do usuário
+        let dados = {
+            estoque: usuarioAtual ? JSON.parse(localStorage.getItem(usuarioAtual + '_estoque')) || [] : [],
+            perdas: usuarioAtual ? JSON.parse(localStorage.getItem(usuarioAtual + '_perdas')) || [] : [],
+            clientes: usuarioAtual ? JSON.parse(localStorage.getItem(usuarioAtual + '_clientes')) || [] : [],
+            produtos: usuarioAtual ? JSON.parse(localStorage.getItem(usuarioAtual + '_produtos')) || [] : [],
+            consignados: usuarioAtual ? JSON.parse(localStorage.getItem(usuarioAtual + '_consignados')) || [] : []
+        };
+
+        let clienteEmEdicao = null;
+
+        function salvarDados() {
+            if (!usuarioAtual) return;
+            localStorage.setItem(usuarioAtual + '_estoque', JSON.stringify(dados.estoque));
+            localStorage.setItem(usuarioAtual + '_perdas', JSON.stringify(dados.perdas));
+            localStorage.setItem(usuarioAtual + '_clientes', JSON.stringify(dados.clientes));
+            localStorage.setItem(usuarioAtual + '_produtos', JSON.stringify(dados.produtos));
+            localStorage.setItem(usuarioAtual + '_consignados', JSON.stringify(dados.consignados));
+        }
+
+        function mudarAba(aba) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(aba).classList.add('active');
+            event.target.classList.add('active');
+
+            if (aba === 'dashboard') atualizarDashboard();
+            if (aba === 'produtos') atualizarProdutos();
+            if (aba === 'estoque') atualizarEstoque();
+            if (aba === 'perdas') atualizarPerdas();
+            if (aba === 'clientes') atualizarClientes();
+        }
+
+        // ===== CALCULADORA =====
+        function calcularCusto() {
+            const peso = parseFloat(document.getElementById('calcPeso').value) || 0;
+            const custoMat = parseFloat(document.getElementById('calcCustoMaterial').value) || 0;
+            const tempo = parseFloat(document.getElementById('calcTempo').value) || 0;
+            const energia = parseFloat(document.getElementById('calcEnergia').value) || 0;
+            const embalagem = parseFloat(document.getElementById('calcEmbalagem').value) || 0;
+            const outros = parseFloat(document.getElementById('calcOutros').value) || 0;
+            const margem = parseFloat(document.getElementById('calcMargem').value) || 50;
+            const quantidade = parseInt(document.getElementById('calcQuantidade').value) || 1;
+
+            if (peso === 0 || custoMat === 0 || tempo === 0 || energia === 0) {
+                alert('⚠️ Preencha todos os campos!');
+                return;
+            }
+
+            const custMaterial = (peso / 1000) * custoMat;
+            const custEnergia = tempo * energia;
+            const custTotal = custMaterial + custEnergia + embalagem + outros;
+
+            // Divide pelo número de unidades
+            const custTotalUnitario = custTotal / quantidade;
+            const custLucro = (custTotalUnitario * margem) / 100;
+            const custVenda = custTotalUnitario + custLucro;
+
+            document.getElementById('custMat').innerText = 'R$ ' + (custMaterial / quantidade).toFixed(2);
+            document.getElementById('custEne').innerText = 'R$ ' + (custEnergia / quantidade).toFixed(2);
+            document.getElementById('custEmb').innerText = 'R$ ' + (embalagem / quantidade).toFixed(2);
+            document.getElementById('custOut').innerText = 'R$ ' + (outros / quantidade).toFixed(2);
+            document.getElementById('custTotal').innerText = 'R$ ' + custTotalUnitario.toFixed(2);
+            document.getElementById('custLucro').innerText = 'R$ ' + custLucro.toFixed(2);
+            document.getElementById('custVenda').innerText = 'R$ ' + custVenda.toFixed(2);
+
+            // Guardar valores para cadastro de produto
+            window.calcValoresAtual = {
+                preço: custVenda,
+                quantidade: quantidade,
+                custTotal: custTotal
+            };
+
+            document.getElementById('resultadoCalc').style.display = 'block';
+        }
+
+        // ===== ESTOQUE =====
+        function adicionarEstoque() {
+            const material = document.getElementById('estMaterial').value.trim();
+            const tipo = document.getElementById('estTipo').value.trim();
+            const quantidade = parseFloat(document.getElementById('estQuantidade').value) || 0;
+            const custo = parseFloat(document.getElementById('estCusto').value) || 0;
+
+            if (!material || !tipo || quantidade === 0 || custo === 0) {
+                alert('⚠️ Preencha todos os campos!');
+                return;
+            }
+
+            dados.estoque.push({
+                id: Date.now(),
+                material,
+                tipo,
+                quantidade,
+                custo,
+                data: new Date().toLocaleDateString('pt-BR')
+            });
+
+            salvarDados();
+            atualizarEstoque();
+            atualizarDashboard();
+
+            document.getElementById('estMaterial').value = '';
+            document.getElementById('estTipo').value = '';
+            document.getElementById('estQuantidade').value = '';
+            document.getElementById('estCusto').value = '';
+        }
+
+        function atualizarEstoque() {
+            const tbody = document.getElementById('corpoEstoque');
+            tbody.innerHTML = '';
+
+            if (dados.estoque.length === 0) {
+                document.getElementById('tabelaEstoque').style.display = 'none';
+                document.getElementById('emptyEstoque').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('tabelaEstoque').style.display = 'table';
+            document.getElementById('emptyEstoque').style.display = 'none';
+
+            dados.estoque.forEach(item => {
+                const valorTotal = item.quantidade * item.custo;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.material}</td>
+                    <td>${item.tipo}</td>
+                    <td>${item.quantidade.toFixed(2)}</td>
+                    <td>R$ ${item.custo.toFixed(2)}</td>
+                    <td>R$ ${valorTotal.toFixed(2)}</td>
+                    <td class="acoes">
+                        <button class="small danger" onclick="deletarEstoque(${item.id})">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function deletarEstoque(id) {
+            if (confirm('Tem certeza?')) {
+                dados.estoque = dados.estoque.filter(e => e.id !== id);
+                salvarDados();
+                atualizarEstoque();
+            }
+        }
+
+        // ===== PERDAS =====
+        function adicionarPerda() {
+            const data = document.getElementById('perdData').value;
+            const motivo = document.getElementById('perdMotivo').value.trim();
+            const material = document.getElementById('perdMaterial').value.trim();
+            const quantidade = parseFloat(document.getElementById('perdQuantidade').value) || 0;
+            const valor = parseFloat(document.getElementById('perdValor').value) || 0;
+
+            if (!data || !motivo || !material || quantidade === 0 || valor === 0) {
+                alert('⚠️ Preencha todos os campos!');
+                return;
+            }
+
+            dados.perdas.push({
+                id: Date.now(),
+                data,
+                motivo,
+                material,
+                quantidade,
+                valor
+            });
+
+            salvarDados();
+            atualizarPerdas();
+            atualizarDashboard();
+
+            document.getElementById('perdMotivo').value = '';
+            document.getElementById('perdMaterial').value = '';
+            document.getElementById('perdQuantidade').value = '';
+            document.getElementById('perdValor').value = '';
+        }
+
+        function atualizarPerdas() {
+            const tbody = document.getElementById('corpoPerdas');
+            tbody.innerHTML = '';
+
+            if (dados.perdas.length === 0) {
+                document.getElementById('tabelaPerdas').style.display = 'none';
+                document.getElementById('emptyPerdas').style.display = 'block';
+                document.getElementById('totalPerdas').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('tabelaPerdas').style.display = 'table';
+            document.getElementById('emptyPerdas').style.display = 'none';
+
+            let totalQnt = 0;
+            let totalVal = 0;
+
+            dados.perdas.forEach(item => {
+                totalQnt += item.quantidade;
+                totalVal += item.valor;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${new Date(item.data).toLocaleDateString('pt-BR')}</td>
+                    <td>${item.motivo}</td>
+                    <td>${item.material}</td>
+                    <td>${item.quantidade.toFixed(1)}</td>
+                    <td>R$ ${item.valor.toFixed(2)}</td>
+                    <td class="acoes">
+                        <button class="small danger" onclick="deletarPerda(${item.id})">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('totalPQnt').innerText = totalQnt.toFixed(1) + ' g';
+            document.getElementById('totalPVal').innerText = 'R$ ' + totalVal.toFixed(2);
+            document.getElementById('totalPerdas').style.display = 'block';
+        }
+
+        function deletarPerda(id) {
+            if (confirm('Tem certeza?')) {
+                dados.perdas = dados.perdas.filter(e => e.id !== id);
+                salvarDados();
+                atualizarPerdas();
+            }
+        }
+
+        // ===== CLIENTES =====
+        function adicionarCliente() {
+            const nome = document.getElementById('cliNome').value.trim();
+            const telefone = document.getElementById('cliTelefone').value.trim();
+
+            if (!nome || !telefone) {
+                alert('⚠️ Preencha todos os campos!');
+                return;
+            }
+
+            dados.clientes.push({
+                id: Date.now(),
+                nome,
+                telefone,
+                compras: [],
+                dataCadastro: new Date().toLocaleDateString('pt-BR')
+            });
+
+            salvarDados();
+            atualizarClientes();
+            atualizarDashboard();
+
+            document.getElementById('cliNome').value = '';
+            document.getElementById('cliTelefone').value = '';
+        }
+
+        function atualizarClientes() {
+            const tbody = document.getElementById('corpoClientes');
+            tbody.innerHTML = '';
+
+            if (dados.clientes.length === 0) {
+                document.getElementById('tabelaClientes').style.display = 'none';
+                document.getElementById('emptyClientes').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('tabelaClientes').style.display = 'table';
+            document.getElementById('emptyClientes').style.display = 'none';
+
+            dados.clientes.forEach(cliente => {
+                const totalCompras = cliente.compras.length;
+                const valorTotal = cliente.compras.reduce((sum, c) => sum + c.preco, 0);
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${cliente.nome}</strong></td>
+                    <td>${cliente.telefone}</td>
+                    <td>${totalCompras}</td>
+                    <td>R$ ${valorTotal.toFixed(2)}</td>
+                    <td class="acoes">
+                        <button class="small" onclick="abrirCompras(${cliente.id})">📝</button>
+                        <button class="small danger" onclick="deletarCliente(${cliente.id})">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function abrirCompras(clienteId) {
+            clienteEmEdicao = clienteId;
+            const cliente = dados.clientes.find(c => c.id === clienteId);
+
+            document.getElementById('nomeClienteModal').innerText = cliente.nome;
+
+            let html = '';
+            if (cliente.compras.length === 0) {
+                html = '<p style="text-align:center; color:#999;">Nenhuma compra registrada</p>';
+            } else {
+                cliente.compras.forEach((compra, idx) => {
+                    html += `
+                        <div style="background:#f5f5f5; padding:10px; margin-bottom:10px; border-radius:8px;">
+                            <div><strong>${compra.produto}</strong></div>
+                            <div style="font-size:0.9em; color:#666;">
+                                R$ ${compra.preco.toFixed(2)} | ${new Date(compra.data).toLocaleDateString('pt-BR')}
+                            </div>
+                            <button class="small danger" style="margin-top:8px;" onclick="deletarCompra(${idx})">Remover</button>
+                        </div>
+                    `;
+                });
+            }
+
+            document.getElementById('listaCompras').innerHTML = html;
+            document.getElementById('modFiltroCategoria').value = '';
+            atualizarSelectProdutos();
+            document.getElementById('modalCompras').style.display = 'flex';
+        }
+
+        function adicionarCompra() {
+            const produtoId = parseInt(document.getElementById('modProduto').value) || 0;
+            const preco = parseFloat(document.getElementById('modPreco').value) || 0;
+            const quantidade = parseInt(document.getElementById('modQuantidade').value) || 1;
+            const data = document.getElementById('modData').value;
+
+            if (produtoId === 0 || preco === 0 || !data) {
+                alert('⚠️ Selecione um produto, preço e data!');
+                return;
+            }
+
+            // Buscar produto
+            const produto = dados.produtos.find(p => p.id === produtoId);
+            if (!produto) {
+                alert('⚠️ Produto não encontrado!');
+                return;
+            }
+
+            // Verificar estoque
+            if (produto.estoque < quantidade) {
+                alert(`⚠️ Estoque insuficiente! Disponível: ${produto.estoque}`);
+                return;
+            }
+
+            // Descontar do estoque
+            produto.estoque -= quantidade;
+
+            // Registrar compra
+            const cliente = dados.clientes.find(c => c.id === clienteEmEdicao);
+            cliente.compras.push({
+                produtoId: produto.id,
+                produto: produto.nome,
+                preco: preco * quantidade,
+                quantidade,
+                data
+            });
+
+            salvarDados();
+            abrirCompras(clienteEmEdicao);
+            atualizarDashboard();
+            atualizarProdutos();
+
+            document.getElementById('modProduto').value = '';
+            document.getElementById('modPreco').value = '';
+            document.getElementById('modQuantidade').value = '1';
+            document.getElementById('modData').valueAsDate = new Date();
+        }
+
+        function deletarCompra(idx) {
+            const cliente = dados.clientes.find(c => c.id === clienteEmEdicao);
+            const compra = cliente.compras[idx];
+
+            // Voltar estoque do produto
+            if (compra.produtoId) {
+                const produto = dados.produtos.find(p => p.id === compra.produtoId);
+                if (produto) {
+                    produto.estoque += compra.quantidade;
+                }
+            }
+
+            cliente.compras.splice(idx, 1);
+            salvarDados();
+            abrirCompras(clienteEmEdicao);
+            atualizarDashboard();
+            atualizarProdutos();
+        }
+
+        function deletarCliente(id) {
+            if (confirm('Tem certeza? Todas as compras desse cliente serão deletadas!')) {
+                dados.clientes = dados.clientes.filter(c => c.id !== id);
+                salvarDados();
+                atualizarClientes();
+            }
+        }
+
+        function fecharModal() {
+            document.getElementById('modalCompras').style.display = 'none';
+            atualizarClientes();
+        }
+
+        // ===== CONSIGNADOS =====
+        function adicionarConsignado() {
+            const nome = document.getElementById('conNome').value.trim();
+            const tipo = document.getElementById('conTipo').value;
+
+            if (!nome) {
+                alert('⚠️ Preencha o nome do ponto!');
+                return;
+            }
+
+            dados.consignados = dados.consignados || [];
+            dados.consignados.push({
+                id: Date.now(),
+                nome,
+                tipo,
+                estoque: [],
+                vendas: [],
+                comissoes: [],
+                dataCadastro: new Date().toLocaleDateString('pt-BR')
+            });
+
+            salvarDados();
+            atualizarConsignados();
+            atualizarSelectConsignados();
+            atualizarSelectReabastece();
+
+            document.getElementById('conNome').value = '';
+            document.getElementById('conTipo').value = 'ponto_venda';
+
+            alert(`✅ Ponto de venda "${nome}" adicionado com sucesso!`);
+        }
+
+        function atualizarConsignados() {
+            const tbody = document.getElementById('corpoConsignados');
+            tbody.innerHTML = '';
+
+            dados.consignados = dados.consignados || [];
+
+            if (dados.consignados.length === 0) {
+                document.getElementById('tabelaConsignados').style.display = 'none';
+                document.getElementById('emptyConsignados').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('tabelaConsignados').style.display = 'table';
+            document.getElementById('emptyConsignados').style.display = 'none';
+
+            dados.consignados.forEach(con => {
+                const totalProdutos = con.estoque.length;
+                const totalValor = con.estoque.reduce((sum, e) => sum + (e.qtd * 0), 0);
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${con.nome}</strong></td>
+                    <td>${con.tipo === 'ponto_venda' ? '🏪' : con.tipo === 'irmao' ? '👨‍👦' : '📦'} ${con.tipo.replace('_', ' ')}</td>
+                    <td>${totalProdutos}</td>
+                    <td>${con.estoque.reduce((sum, e) => sum + e.qtd, 0)} un.</td>
+                    <td class="acoes">
+                        <button class="small" onclick="abrirEstoqueConsignado(${con.id})">📦</button>
+                        <button class="small danger" onclick="deletarConsignado(${con.id})">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function atualizarSelectConsignados() {
+            const select = document.getElementById('conPontoSelecionado');
+            select.innerHTML = '<option value="">Selecione...</option>';
+
+            dados.consignados = dados.consignados || [];
+            dados.consignados.forEach(con => {
+                const option = document.createElement('option');
+                option.value = con.id;
+                option.text = con.nome;
+                select.appendChild(option);
+            });
+        }
+
+        function abrirEstoqueConsignado(conId) {
+            const con = (dados.consignados || []).find(c => c.id === conId);
+            if (!con) {
+                alert('⚠️ Consignado não encontrado!');
+                return;
+            }
+
+            // Aqui você pode abrir um modal mostrando o estoque desse ponto
+            alert(`📦 ${con.nome}\n\nTotal de produtos: ${con.estoque.length}\nTotal de unidades: ${con.estoque.reduce((sum, e) => sum + e.qtd, 0)}`);
+        }
+
+        function deletarConsignado(id) {
+            if (confirm('Tem certeza? Todos os estoque desse ponto serão deletados!')) {
+                dados.consignados = (dados.consignados || []).filter(c => c.id !== id);
+                salvarDados();
+                atualizarConsignados();
+                atualizarSelectConsignados();
+            }
+        }
+
+        function atualizarProdutosReabastece() {
+            const conId = parseInt(document.getElementById('conReabastecePonto').value) || 0;
+            const select = document.getElementById('conReabasteceProduto');
+
+            select.innerHTML = '<option value="">Selecione...</option>';
+
+            dados.produtos.forEach(prod => {
+                const option = document.createElement('option');
+                option.value = prod.id;
+                option.text = `${prod.nome} - R$ ${prod.preco.toFixed(2)}`;
+                select.appendChild(option);
+            });
+        }
+
+        function reabasteceConsignado() {
+            const conId = parseInt(document.getElementById('conReabastecePonto').value) || 0;
+            const prodId = parseInt(document.getElementById('conReabasteceProduto').value) || 0;
+            const qtd = parseInt(document.getElementById('conReabastaceQtd').value) || 0;
+
+            if (conId === 0 || prodId === 0 || qtd === 0) {
+                alert('⚠️ Preencha todos os campos!');
+                return;
+            }
+
+            const con = (dados.consignados || []).find(c => c.id === conId);
+            const produto = dados.produtos.find(p => p.id === prodId);
+
+            if (!con || !produto) {
+                alert('⚠️ Consignado ou produto não encontrado!');
+                return;
+            }
+
+            // Verificar se já existe esse produto em estoque
+            const estoque = con.estoque.find(e => e.produtoId === prodId);
+
+            if (estoque) {
+                estoque.qtd += qtd;
+            } else {
+                con.estoque.push({
+                    produtoId: prodId,
+                    nome: produto.nome,
+                    qtd: qtd
+                });
+            }
+
+            salvarDados();
+            atualizarReabastece();
+            atualizarProdutosConsignado();
+
+            document.getElementById('conReabasteceProduto').value = '';
+            document.getElementById('conReabastaceQtd').value = '';
+
+            alert(`✅ Reabasteça realizado!\n+${qtd} ${produto.nome}\nEstoque atual: ${estoque ? estoque.qtd : qtd}`);
+        }
+
+        function atualizarReabastece() {
+            const tbody = document.getElementById('corpoReabastece');
+            tbody.innerHTML = '';
+
+            let todosEstoques = [];
+            (dados.consignados || []).forEach(con => {
+                con.estoque.forEach(est => {
+                    todosEstoques.push({
+                        pontoNome: con.nome,
+                        ...est
+                    });
+                });
+            });
+
+            if (todosEstoques.length === 0) {
+                document.getElementById('tabelaReabastece').style.display = 'none';
+                document.getElementById('emptyReabastece').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('tabelaReabastece').style.display = 'table';
+            document.getElementById('emptyReabastece').style.display = 'none';
+
+            todosEstoques.forEach(est => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${est.pontoNome}</td>
+                    <td>${est.nome}</td>
+                    <td><strong style="color: ${est.qtd > 0 ? '#2e7d32' : '#d32f2f'}">${est.qtd}</strong></td>
+                    <td class="acoes">
+                        <button class="small danger" onclick="removerEstoqueConsignado('${est.pontoNome}', ${est.produtoId})">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function removerEstoqueConsignado(pontoNome, prodId) {
+            if (confirm('Tem certeza?')) {
+                const con = (dados.consignados || []).find(c => c.nome === pontoNome);
+                if (con) {
+                    con.estoque = con.estoque.filter(e => e.produtoId !== prodId);
+                    salvarDados();
+                    atualizarReabastece();
+                    atualizarProdutosConsignado();
+                }
+            }
+        }
+
+        function atualizarProdutosConsignado() {
+            const conId = parseInt(document.getElementById('conPontoSelecionado').value) || 0;
+            const select = document.getElementById('conProduto');
+
+            select.innerHTML = '<option value="">Selecione...</option>';
+
+            if (conId === 0) return;
+
+            const con = (dados.consignados || []).find(c => c.id === conId);
+            if (!con) return;
+
+            // Mostrar produtos que estão em consignação neste ponto
+            con.estoque.forEach(est => {
+                const option = document.createElement('option');
+                option.value = est.produtoId;
+                option.text = `${est.nome} (${est.qtd} em estoque)`;
+                select.appendChild(option);
+            });
+        }
+
+        function preencherComissaoProduto() {
+            const prodId = parseInt(document.getElementById('conProduto').value) || 0;
+            const qtd = parseInt(document.getElementById('conQtdVendida').value) || 1;
+
+            if (prodId === 0) {
+                document.getElementById('conComissaoUnit').value = 'R$ 0.00';
+                document.getElementById('conComissaoTotal').value = 'R$ 0.00';
+                return;
+            }
+
+            const produto = dados.produtos.find(p => p.id === prodId);
+            if (!produto) return;
+
+            let comissaoUnit = 0;
+
+            if (produto.comissao && produto.comissao.tipo === 'fixo') {
+                comissaoUnit = produto.comissao.valor;
+            } else if (produto.comissao && produto.comissao.tipo === 'percentual') {
+                comissaoUnit = (produto.preco * produto.comissao.valor) / 100;
+            }
+
+            const comissaoTotal = comissaoUnit * qtd;
+
+            document.getElementById('conComissaoUnit').value = 'R$ ' + comissaoUnit.toFixed(2);
+            document.getElementById('conComissaoTotal').value = 'R$ ' + comissaoTotal.toFixed(2);
+        }
+
+        function registrarVendaConsignado() {
+            const conId = parseInt(document.getElementById('conPontoSelecionado').value) || 0;
+            const prodId = parseInt(document.getElementById('conProduto').value) || 0;
+            const qtd = parseInt(document.getElementById('conQtdVendida').value) || 0;
+            const data = document.getElementById('conDataVenda').value;
+
+            if (conId === 0 || prodId === 0 || qtd === 0 || !data) {
+                alert('⚠️ Preencha todos os campos!');
+                return;
+            }
+
+            const con = (dados.consignados || []).find(c => c.id === conId);
+            if (!con) {
+                alert('⚠️ Consignado não encontrado!');
+                return;
+            }
+
+            const produto = dados.produtos.find(p => p.id === prodId);
+            if (!produto) {
+                alert('⚠️ Produto não encontrado!');
+                return;
+            }
+
+            const estoque = con.estoque.find(e => e.produtoId === prodId);
+            if (!estoque || estoque.qtd < qtd) {
+                alert(`⚠️ Estoque insuficiente! Disponível: ${estoque ? estoque.qtd : 0}`);
+                return;
+            }
+
+            // Calcular comissão
+            let comissaoUnit = 0;
+            if (produto.comissao && produto.comissao.tipo === 'fixo') {
+                comissaoUnit = produto.comissao.valor;
+            } else if (produto.comissao && produto.comissao.tipo === 'percentual') {
+                comissaoUnit = (produto.preco * produto.comissao.valor) / 100;
+            }
+
+            const comissaoTotal = comissaoUnit * qtd;
+
+            // Descontar estoque
+            estoque.qtd -= qtd;
+
+            // Registrar venda
+            con.vendas.push({
+                id: Date.now(),
+                produtoId: produto.id,
+                nome: produto.nome,
+                qtd,
+                preco: produto.preco,
+                comissao: comissaoTotal,
+                data,
+                pago: false
+            });
+
+            salvarDados();
+            atualizarVendasConsignado();
+            atualizarComissoes();
+            atualizarProdutosConsignado();
+
+            document.getElementById('conProduto').value = '';
+            document.getElementById('conQtdVendida').value = '';
+            document.getElementById('conDataVenda').valueAsDate = new Date();
+            document.getElementById('conComissaoUnit').value = 'R$ 0.00';
+            document.getElementById('conComissaoTotal').value = 'R$ 0.00';
+        }
+
+        function atualizarVendasConsignado() {
+            const tbody = document.getElementById('corpoBaixaConsignado');
+            tbody.innerHTML = '';
+
+            let todasVendas = [];
+            (dados.consignados || []).forEach(con => {
+                con.vendas.forEach(venda => {
+                    todasVendas.push({
+                        pontoNome: con.nome,
+                        ...venda
+                    });
+                });
+            });
+
+            if (todasVendas.length === 0) {
+                document.getElementById('tabelaBaixaConsignado').style.display = 'none';
+                document.getElementById('emptyBaixaConsignado').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('tabelaBaixaConsignado').style.display = 'table';
+            document.getElementById('emptyBaixaConsignado').style.display = 'none';
+
+            todasVendas.forEach(venda => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${venda.pontoNome}</td>
+                    <td>${venda.nome}</td>
+                    <td>${venda.qtd}</td>
+                    <td>R$ ${venda.comissao.toFixed(2)}</td>
+                    <td>${new Date(venda.data).toLocaleDateString('pt-BR')}</td>
+                    <td class="acoes">
+                        <button class="small danger" onclick="deletarVendaConsignado('${venda.pontoNome}', ${venda.id})">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function deletarVendaConsignado(pontoNome, vendaId) {
+            if (confirm('Tem certeza?')) {
+                const con = (dados.consignados || []).find(c => c.nome === pontoNome);
+                if (con) {
+                    con.vendas = con.vendas.filter(v => v.id !== vendaId);
+                    salvarDados();
+                    atualizarVendasConsignado();
+                    atualizarComissoes();
+                }
+            }
+        }
+
+        function atualizarComissoes() {
+            const container = document.getElementById('containerComissoes');
+
+            if (!dados.consignados || dados.consignados.length === 0) {
+                container.innerHTML = '<div id="emptyComissoes" class="empty-state"><h3>💰 Nenhuma comissão registrada</h3></div>';
+                return;
+            }
+
+            let html = '';
+
+            (dados.consignados || []).forEach(con => {
+                const totalComissao = con.vendas.reduce((sum, v) => sum + v.comissao, 0);
+                const comissaoPaga = con.vendas.filter(v => v.pago).reduce((sum, v) => sum + v.comissao, 0);
+                const comissaoPendente = totalComissao - comissaoPaga;
+
+                if (totalComissao > 0) {
+                    html += `
+                        <div class="resultado" style="margin-bottom: 20px;">
+                            <h3>${con.tipo === 'irmao' ? '👨‍👦' : '🏪'} ${con.nome}</h3>
+                            <div class="resultado-item">
+                                <strong>Total de Comissão:</strong>
+                                <span class="resultado-valor">R$ ${totalComissao.toFixed(2)}</span>
+                            </div>
+                            <div class="resultado-item">
+                                <strong>Já Pagou:</strong>
+                                <span class="resultado-valor" style="color: #2e7d32;">R$ ${comissaoPaga.toFixed(2)}</span>
+                            </div>
+                            <div class="resultado-item">
+                                <strong>Pendente:</strong>
+                                <span class="resultado-valor" style="color: #d32f2f;">R$ ${comissaoPendente.toFixed(2)}</span>
+                            </div>
+                            <div style="margin-top: 15px;">
+                                <button class="small" style="background: #2e7d32; width: 100%;" onclick="marcarComissaoComo(${con.id}, true)">✅ Marcar Tudo como Pago</button>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            if (html === '') {
+                container.innerHTML = '<div id="emptyComissoes" class="empty-state"><h3>💰 Nenhuma comissão registrada</h3></div>';
+            } else {
+                container.innerHTML = html;
+            }
+        }
+
+        function marcarComissaoComo(conId, pago) {
+            const con = (dados.consignados || []).find(c => c.id === conId);
+            if (con) {
+                con.vendas.forEach(v => v.pago = pago);
+                salvarDados();
+                atualizarComissoes();
+            }
+        }
+
+        // ===== PRODUTOS =====
+        function adicionarProduto() {
+            const nome = document.getElementById('prodNome').value.trim();
+            const categoria = document.getElementById('prodCategoria').value.trim();
+            const preco = parseFloat(document.getElementById('prodPreco').value) || 0;
+            const precoMinimo = parseFloat(document.getElementById('prodPrecoMinimo').value) || 0;
+            const estoque = parseInt(document.getElementById('prodEstoque').value) || 0;
+            const descricao = document.getElementById('prodDescricao').value.trim();
+            const comissaoTipo = document.getElementById('prodComissaoTipo').value;
+            const comissaoValor = parseFloat(document.getElementById('prodComissaoValor').value) || 0;
+
+            if (!nome || !categoria || preco === 0 || estoque === 0) {
+                alert('⚠️ Preencha nome, categoria, preço e estoque!');
+                return;
+            }
+
+            dados.produtos.push({
+                id: Date.now(),
+                nome,
+                categoria,
+                preco,
+                precoMinimo,
+                estoque,
+                descricao,
+                comissao: {
+                    tipo: comissaoTipo || 'nenhuma',
+                    valor: comissaoValor
+                },
+                dataCriacao: new Date().toLocaleDateString('pt-BR'),
+                historicoPrecos: [{
+                    data: new Date().toLocaleDateString('pt-BR'),
+                    preco: preco,
+                    quantidade: estoque,
+                    motivo: 'Cadastro inicial'
+                }]
+            });
+
+            salvarDados();
+            atualizarProdutos();
+            atualizarDashboard();
+
+            document.getElementById('prodNome').value = '';
+            document.getElementById('prodCategoria').value = '';
+            document.getElementById('prodPreco').value = '';
+            document.getElementById('prodPrecoMinimo').value = '';
+            document.getElementById('prodEstoque').value = '';
+            document.getElementById('prodDescricao').value = '';
+            document.getElementById('prodComissaoTipo').value = '';
+            document.getElementById('prodComissaoValor').value = '';
+        }
+
+        function atualizarProdutos() {
+            const tbody = document.getElementById('corpoProdutos');
+            tbody.innerHTML = '';
+
+            if (dados.produtos.length === 0) {
+                document.getElementById('tabelaProdutos').style.display = 'none';
+                document.getElementById('emptyProdutos').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('tabelaProdutos').style.display = 'table';
+            document.getElementById('emptyProdutos').style.display = 'none';
+
+            dados.produtos.forEach(prod => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${prod.nome}</strong></td>
+                    <td>${prod.categoria}</td>
+                    <td>R$ ${prod.preco.toFixed(2)}</td>
+                    <td><strong style="color: ${prod.estoque > 5 ? '#2e7d32' : '#d32f2f'}">${prod.estoque}</strong></td>
+                    <td>${prod.descricao}</td>
+                    <td class="acoes">
+                        <button class="small" onclick="abrirEditarProduto(${prod.id})" style="background: #667eea;">✏️</button>
+                        <button class="small danger" onclick="deletarProduto(${prod.id})">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            atualizarSelectProdutos();
+        }
+
+        function atualizarSelectProdutos() {
+            const select = document.getElementById('modProduto');
+            const valorAtual = select.value;
+
+            select.innerHTML = '<option value="">Selecione um produto...</option>';
+
+            dados.produtos.forEach(prod => {
+                if (prod.estoque > 0) {
+                    const option = document.createElement('option');
+                    option.value = prod.id;
+                    option.text = `${prod.nome} (${prod.estoque} em estoque) - R$ ${prod.preco.toFixed(2)}`;
+                    select.appendChild(option);
+                }
+            });
+
+            select.value = valorAtual;
+            atualizarSelectProdutosCalc();
+        }
+
+        function atualizarSelectProdutosCalc() {
+            const select = document.getElementById('calcProdutoSelecionado');
+            select.innerHTML = '<option value="">Selecione um produto...</option>';
+
+            dados.produtos.forEach(prod => {
+                const option = document.createElement('option');
+                option.value = prod.id;
+                option.text = `${prod.nome} (${prod.categoria}) - R$ ${prod.preco.toFixed(2)}`;
+                select.appendChild(option);
+            });
+        }
+
+        function preencherDadosProdutoCalc() {
+            const produtoId = parseInt(document.getElementById('calcProdutoSelecionado').value) || 0;
+
+            if (produtoId === 0) {
+                document.getElementById('calcPrecoProduto').value = 'R$ 0.00';
+                return;
+            }
+
+            const produto = dados.produtos.find(p => p.id === produtoId);
+            if (produto) {
+                document.getElementById('calcPrecoProduto').value = 'R$ ' + produto.preco.toFixed(2);
+            }
+        }
+
+        function atualizarProdutosModal() {
+            const categoria = document.getElementById('modFiltroCategoria').value;
+            const select = document.getElementById('modProduto');
+
+            select.innerHTML = '<option value="">Selecione um produto...</option>';
+
+            let produtosFiltrados = dados.produtos.filter(p => p.estoque > 0);
+
+            if (categoria) {
+                produtosFiltrados = produtosFiltrados.filter(p => p.categoria === categoria);
+            }
+
+            produtosFiltrados.forEach(prod => {
+                const option = document.createElement('option');
+                option.value = prod.id;
+                option.text = `${prod.nome} (${prod.estoque} em estoque) - R$ ${prod.preco.toFixed(2)}`;
+                select.appendChild(option);
+            });
+        }
+
+        function preencherPreco() {
+            const selectProd = document.getElementById('modProduto');
+            const prodId = selectProd.value;
+
+            if (!prodId) {
+                document.getElementById('modPreco').value = '';
+                return;
+            }
+
+            const produto = dados.produtos.find(p => p.id === parseInt(prodId));
+            if (produto) {
+                document.getElementById('modPreco').value = produto.preco.toFixed(2);
+            }
+        }
+
+        function deletarProduto(id) {
+            if (confirm('Tem certeza? Isso vai remover o produto do catálogo.')) {
+                dados.produtos = dados.produtos.filter(p => p.id !== id);
+                salvarDados();
+                atualizarProdutos();
+                atualizarDashboard();
+            }
+        }
+
+        function abrirCadastroFromCalc() {
+            if (!window.calcValoresAtual) {
+                alert('⚠️ Calcule primeiro!');
+                return;
+            }
+
+            const preco = window.calcValoresAtual.preço;
+            const qnt = window.calcValoresAtual.quantidade;
+
+            document.getElementById('modCalcPreco').innerText = 'R$ ' + preco.toFixed(2);
+            document.getElementById('modCalcQnt').innerText = qnt;
+            document.getElementById('modCalcEstoque').value = qnt;
+            document.getElementById('modCalcNome').value = '';
+            document.getElementById('modCalcCategoria').value = '';
+            document.getElementById('modCalcDescricao').value = '';
+
+            document.getElementById('modalCadastroCalc').style.display = 'flex';
+        }
+
+        function fecharModalCalc() {
+            document.getElementById('modalCadastroCalc').style.display = 'none';
+        }
+
+        function salvarProdutoDoCalc() {
+            const nome = document.getElementById('modCalcNome').value.trim();
+            const categoria = document.getElementById('modCalcCategoria').value;
+            const estoque = parseInt(document.getElementById('modCalcEstoque').value) || 0;
+            const descricao = document.getElementById('modCalcDescricao').value.trim();
+
+            if (!nome || !categoria || estoque === 0) {
+                alert('⚠️ Preencha nome, categoria e estoque!');
+                return;
+            }
+
+            const preco = window.calcValoresAtual.preço;
+
+            dados.produtos.push({
+                id: Date.now(),
+                nome,
+                categoria,
+                preco,
+                estoque,
+                descricao,
+                dataCriacao: new Date().toLocaleDateString('pt-BR'),
+                historicoPrecos: [{
+                    data: new Date().toLocaleDateString('pt-BR'),
+                    preco: preco,
+                    quantidade: estoque,
+                    motivo: 'Primeira produção (Calculadora)'
+                }]
+            });
+
+            salvarDados();
+            atualizarProdutos();
+            atualizarDashboard();
+            fecharModalCalc();
+
+            alert('✅ Produto cadastrado com sucesso!');
+        }
+
+        // ===== EDIÇÃO DE PRODUTOS =====
+        let produtoEmEdicao = null;
+
+        function abrirEditarProduto(produtoId) {
+            produtoEmEdicao = produtoId;
+            const produto = dados.produtos.find(p => p.id === produtoId);
+
+            if (!produto) {
+                alert('⚠️ Produto não encontrado!');
+                return;
+            }
+
+            // Preencher dados do produto
+            document.getElementById('editProdNome').innerText = produto.nome;
+            document.getElementById('editProdEstoqueAtual').innerText = produto.estoque;
+            document.getElementById('editProdPrecoAtual').innerText = 'R$ ' + produto.preco.toFixed(2);
+
+            // Limpar campos
+            document.getElementById('editAddQuantidade').value = '';
+            document.getElementById('editNewCusto').value = produto.preco.toFixed(2);
+            document.getElementById('editMotivo').value = '';
+
+            // Exibir histórico de custos
+            exibirHistoricoCustos(produto);
+
+            document.getElementById('modalEditarProduto').style.display = 'flex';
+        }
+
+        function exibirHistoricoCustos(produto) {
+            const container = document.getElementById('editHistorico');
+
+            if (!produto.historicoPrecos || produto.historicoPrecos.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999;">Sem histórico registrado</p>';
+                return;
+            }
+
+            // Mostrar últimos 5, mais recentes primeiro
+            const historico = [...produto.historicoPrecos].reverse().slice(0, 5);
+
+            let html = '';
+            historico.forEach((item, idx) => {
+                html += `
+                    <div style="background: white; padding: 12px; margin-bottom: 10px; border-radius: 6px; border-left: 3px solid #667eea;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <strong>${item.data}</strong>
+                            <span style="color: #667eea; font-weight: 600;">R$ ${item.preco.toFixed(2)}</span>
+                        </div>
+                        <div style="font-size: 0.9em; color: #666;">
+                            📦 ${item.quantidade} un. — ${item.motivo || 'Sem motivo'}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function fecharModalEditarProduto() {
+            document.getElementById('modalEditarProduto').style.display = 'none';
+            produtoEmEdicao = null;
+        }
+
+        function salvarEdicaoProduto() {
+            if (!produtoEmEdicao) {
+                alert('⚠️ Erro: produto não selecionado!');
+                return;
+            }
+
+            const quantidade = parseInt(document.getElementById('editAddQuantidade').value) || 0;
+            const novoPreco = parseFloat(document.getElementById('editNewCusto').value) || 0;
+            const motivo = document.getElementById('editMotivo').value.trim() || 'Ajuste manual';
+
+            if (quantidade <= 0) {
+                alert('⚠️ Digite uma quantidade válida!');
+                return;
+            }
+
+            if (novoPreco <= 0) {
+                alert('⚠️ Digite um preço válido!');
+                return;
+            }
+
+            const produto = dados.produtos.find(p => p.id === produtoEmEdicao);
+
+            if (!produto) {
+                alert('⚠️ Produto não encontrado!');
+                return;
+            }
+
+            // Atualizar estoque
+            produto.estoque += quantidade;
+
+            // Atualizar preço
+            produto.preco = novoPreco;
+
+            // Adicionar ao histórico de custos
+            if (!produto.historicoPrecos) {
+                produto.historicoPrecos = [];
+            }
+
+            produto.historicoPrecos.push({
+                data: new Date().toLocaleDateString('pt-BR'),
+                preco: novoPreco,
+                quantidade: quantidade,
+                motivo: motivo
+            });
+
+            salvarDados();
+            atualizarProdutos();
+            atualizarDashboard();
+            fecharModalEditarProduto();
+
+            alert(`✅ Remessa adicionada!\n📦 +${quantidade} unidades\n💰 Novo custo: R$ ${novoPreco.toFixed(2)}\n📊 Estoque agora: ${produto.estoque}`);
+        }
+
+        // ===== DASHBOARD =====
+        function atualizarDashboard() {
+            let totalFaturamento = 0;
+            let totalVendas = 0;
+
+            dados.clientes.forEach(cliente => {
+                cliente.compras.forEach(compra => {
+                    totalFaturamento += compra.preco;
+                    totalVendas++;
+                });
+            });
+
+            let totalPerdaVal = dados.perdas.reduce((sum, p) => sum + p.valor, 0);
+            let totalPerdaQnt = dados.perdas.reduce((sum, p) => sum + p.quantidade, 0);
+
+            let totalEstoque = dados.estoque.reduce((sum, e) => sum + (e.quantidade * e.custo), 0);
+
+            let custoTotal = totalPerdaVal;
+            let lucro = totalFaturamento - custoTotal;
+            let margemPct = totalFaturamento > 0 ? ((lucro / totalFaturamento) * 100).toFixed(1) : 0;
+
+            document.getElementById('dashFaturamento').innerText = 'R$ ' + totalFaturamento.toFixed(2);
+            document.getElementById('dashFaturQnt').innerText = totalVendas + ' venda(s)';
+            document.getElementById('dashCustos').innerText = 'R$ ' + custoTotal.toFixed(2);
+            document.getElementById('dashLucro').innerText = 'R$ ' + lucro.toFixed(2);
+            document.getElementById('dashMargemPct').innerText = margemPct + '%';
+            document.getElementById('dashClientes').innerText = dados.clientes.length;
+            document.getElementById('dashVendas').innerText = totalVendas;
+            document.getElementById('dashTicket').innerText = 'R$ ' + (totalVendas > 0 ? (totalFaturamento / totalVendas).toFixed(2) : '0.00');
+            document.getElementById('dashPerdaQnt').innerText = totalPerdaQnt.toFixed(1) + ' g';
+            document.getElementById('dashPerdaVal').innerText = 'R$ ' + totalPerdaVal.toFixed(2);
+            document.getElementById('dashEstoque').innerText = 'R$ ' + totalEstoque.toFixed(2);
+        }
+
+        // ===== RELATÓRIO =====
+        function gerarRelatorio() {
+            const periodoInicio = document.getElementById('relPeriodoInicio').value;
+            const periodoFim = document.getElementById('relPeriodoFim').value;
+
+            if (!periodoInicio || !periodoFim) {
+                alert('⚠️ Selecione um período!');
+                return;
+            }
+
+            // Filtrar por período
+            const dataInicio = new Date(periodoInicio + '-01');
+            const dataFim = new Date(periodoFim + '-31');
+
+            let totalReceita = 0;
+            let vendas = [];
+            let clientesComVendas = {};
+
+            dados.clientes.forEach(cliente => {
+                let totalCliente = 0;
+                cliente.compras.forEach(compra => {
+                    const dataCompra = new Date(compra.data);
+                    if (dataCompra >= dataInicio && dataCompra <= dataFim) {
+                        totalReceita += compra.preco;
+                        totalCliente += compra.preco;
+                        vendas.push({
+                            cliente: cliente.nome,
+                            produto: compra.produto,
+                            preco: compra.preco,
+                            data: compra.data
+                        });
+                    }
+                });
+                if (totalCliente > 0) {
+                    clientesComVendas[cliente.nome] = {
+                        total: totalCliente,
+                        compras: cliente.compras.filter(c => {
+                            const d = new Date(c.data);
+                            return d >= dataInicio && d <= dataFim;
+                        }).length,
+                        telefone: cliente.telefone
+                    };
+                }
+            });
+
+            // Perdas no período
+            let perdaPeriodo = dados.perdas.filter(p => {
+                const d = new Date(p.data);
+                return d >= dataInicio && d <= dataFim;
+            });
+
+            let totalPerdaVal = perdaPeriodo.reduce((sum, p) => sum + p.valor, 0);
+            let totalPerdaQnt = perdaPeriodo.reduce((sum, p) => sum + p.quantidade, 0);
+
+            // Cálculos
+            let custoTotal = totalPerdaVal;
+            let lucro = totalReceita - custoTotal;
+            let margemPct = totalReceita > 0 ? ((lucro / totalReceita) * 100).toFixed(1) : 0;
+
+            // Preenchimento dos dados
+            document.getElementById('relReceita').innerText = 'R$ ' + totalReceita.toFixed(2);
+            document.getElementById('relCustosTotal').innerText = 'R$ ' + custoTotal.toFixed(2);
+            document.getElementById('relLucro').innerText = 'R$ ' + lucro.toFixed(2);
+            document.getElementById('relMargem').innerText = margemPct + '%';
+            document.getElementById('relReceitaVendas').innerText = 'R$ ' + totalReceita.toFixed(2);
+            document.getElementById('relCustoMat').innerText = 'R$ 0.00';
+            document.getElementById('relCustoPerda').innerText = 'R$ ' + totalPerdaVal.toFixed(2);
+            document.getElementById('relLucroCalc').innerText = 'R$ ' + lucro.toFixed(2);
+
+            // Top Clientes
+            const tabelaClientes = document.getElementById('relTbodyClientes');
+            tabelaClientes.innerHTML = '';
+
+            const clientesOrdenados = Object.entries(clientesComVendas)
+                .sort((a, b) => b[1].total - a[1].total)
+                .slice(0, 10);
+
+            if (clientesOrdenados.length > 0) {
+                document.getElementById('relTabelaClientes').style.display = 'table';
+                document.getElementById('emptyRelClientes').style.display = 'none';
+
+                clientesOrdenados.forEach(([nome, info]) => {
+                    const pct = ((info.total / totalReceita) * 100).toFixed(1);
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid #eee';
+                    tr.innerHTML = `
+                        <td style="padding: 12px;">${nome}</td>
+                        <td style="padding: 12px; text-align: center;">${info.compras}</td>
+                        <td style="padding: 12px; text-align: right; font-weight: 600;">R$ ${info.total.toFixed(2)}</td>
+                        <td style="padding: 12px; text-align: right;">${pct}%</td>
+                    `;
+                    tabelaClientes.appendChild(tr);
+                });
+            } else {
+                document.getElementById('relTabelaClientes').style.display = 'none';
+                document.getElementById('emptyRelClientes').style.display = 'block';
+            }
+
+            // Perdas
+            document.getElementById('relQntPerdas').innerText = perdaPeriodo.length;
+            document.getElementById('relQntMaterial').innerText = totalPerdaQnt.toFixed(1) + ' g';
+            document.getElementById('relValPerdas').innerText = 'R$ ' + totalPerdaVal.toFixed(2);
+            document.getElementById('relPctPerdas').innerText = (custoTotal > 0 ? ((totalPerdaVal / custoTotal) * 100).toFixed(1) : '0') + '%';
+
+            // Parecer
+            let parecer = '<strong>Análise do Período:</strong><br><br>';
+
+            if (totalReceita === 0) {
+                parecer += '❌ <strong>Nenhuma venda registrada neste período.</strong> Foco em marketing e prospecção de clientes.<br><br>';
+            } else {
+                parecer += `✅ <strong>Faturamento:</strong> R$ ${totalReceita.toFixed(2)} com ${vendas.length} vendas registradas.<br><br>`;
+
+                if (margemPct >= 50) {
+                    parecer += `🎯 <strong>Margem Excelente:</strong> ${margemPct}% de lucro. A operação está muito rentável! Continue nesse ritmo.<br><br>`;
+                } else if (margemPct >= 30) {
+                    parecer += `👍 <strong>Margem Boa:</strong> ${margemPct}% de lucro. Negócio está saudável. Monitor custos regularmente.<br><br>`;
+                } else if (margemPct >= 0) {
+                    parecer += `⚠️ <strong>Margem Baixa:</strong> ${margemPct}% de lucro. Considere aumentar preços ou reduzir custos (perdas).<br><br>`;
+                } else {
+                    parecer += `🚨 <strong>PREJUÍZO!</strong> Custos estão acima da receita. Urgente revisar precificação.<br><br>`;
+                }
+            }
+
+            if (totalPerdaVal > 0) {
+                const pctPerdas = ((totalPerdaVal / custoTotal) * 100).toFixed(1);
+                parecer += `📦 <strong>Perdas:</strong> R$ ${totalPerdaVal.toFixed(2)} (${pctPerdas}% dos custos). `;
+                if (totalPerdaVal > totalReceita * 0.2) {
+                    parecer += `Perdas muito altas! Verificar máquina, temperatura e design dos produtos. `;
+                } else if (totalPerdaVal > 0) {
+                    parecer += `Normal para operação. Monitore para evitar aumento. `;
+                }
+                parecer += `<br><br>`;
+            }
+
+            if (clientesOrdenados.length > 0) {
+                parecer += `👥 <strong>Top Cliente:</strong> ${clientesOrdenados[0][0]} com R$ ${clientesOrdenados[0][1].total.toFixed(2)}. `;
+                parecer += `Ofereça novos produtos e mantenha bom relacionamento! <br><br>`;
+            }
+
+            parecer += `<strong>📌 Recomendações:</strong><br>`;
+            parecer += `1️⃣ Aumentar frequência de contato com TOP clientes<br>`;
+            parecer += `2️⃣ Revisar precificação se margem < 30%<br>`;
+            parecer += `3️⃣ Investigar e reduzir perdas<br>`;
+            parecer += `4️⃣ Prospeccionar novos clientes para crescer receita`;
+
+            document.getElementById('parecerTexto').innerHTML = parecer;
+
+            document.getElementById('relatorioCompleto').style.display = 'block';
+            document.getElementById('relatorioVazio').style.display = 'none';
+        }
+
+        // Função para popular select de reabastecimento
+        function atualizarSelectReabastece() {
+            const select = document.getElementById('conReabastecePonto');
+            select.innerHTML = '<option value="">Selecione...</option>';
+
+            dados.consignados = dados.consignados || [];
+            dados.consignados.forEach(con => {
+                const option = document.createElement('option');
+                option.value = con.id;
+                option.text = con.nome;
+                select.appendChild(option);
+            });
+        }
+
+        // Carregar dados (com verificação de login)
+        carregarDados();
+    </script>
+</body>
+</html>
