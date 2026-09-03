@@ -933,8 +933,9 @@
         let clienteEmEdicao = null;
         let produtoEmEdicao = null;
 
-        // Monitorar autenticação
-        auth.onAuthStateChanged(user => {
+        // Monitorar autenticação (aguardar Firebase inicializar)
+        setTimeout(() => {
+            auth.onAuthStateChanged(user => {
             if (user) {
                 usuarioAtual = user;
                 document.getElementById('loginModal').classList.remove('flex');
@@ -951,7 +952,8 @@
                 document.getElementById('tabs').style.display = 'none';
                 document.getElementById('content').style.display = 'none';
             }
-        });
+            });
+        }, 500);
 
         // ===== LOGIN / LOGOUT =====
         function fazerLogin() {
